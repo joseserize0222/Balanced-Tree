@@ -1,113 +1,41 @@
 [![Build](https://github.com/cscenter/kotlin-avl/actions/workflows/HW3.yml/badge.svg)](https://github.com/cscenter/kotlin-avl/actions/workflows/HW3.yml)
 
-# Task 2. Balanced Search Tree
+# Project: Balanced Search Tree (BST)
 
-Implement a generic BST (i.e. AVL, Cartesian tree, Splay). Using it, implement interfaces:
-- [`Map`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/)
-- [`MutableMap`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-map/)
-- [`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list): [`subList`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/sub-list.html) can be __skipped__ or implemented via creating a separate tree, there are no tests for it
-- Bonus: [`MutableList`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/) (you should write tests yourself)
+This project is part of my learning and familiarization with object-oriented programming (OOP) in Kotlin, where I implemented a generic balanced search tree (BST), allowing the choice between three types of self-balancing trees: AVL tree, Cartesian tree, and Splay tree.
 
-##  Implementation details
+## Features
 
-Below are _mostly recommendations_ on how to solve the task. It is okay if you approach the task in a different way.
+- **Interface Implementation**: The tree implements the [`Map`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/), [`MutableMap`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-map/), and [`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/) interfaces, providing an efficient and flexible data structure. Additionally, I optionally implemented the [`MutableList`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/) interface, writing my own tests to verify its behavior.
+  
+- **Automatic Balancing**: The underlying structure of the tree maintains proper balance, ensuring an average or amortized time complexity of $O(\log(n))$ for node insertion and deletion operations.
 
-### Access to your implementation
+- **Two Generic Parameters**: The tree accepts comparable keys and generic values. Specifically, the `maximumValue` and `minimumValue` functions return the value associated with the maximum and minimum keys, respectively, but not necessarily the actual maximum or minimum value.
 
-There are several interfaces you have to implement. Tests work with instances of interfaces, not specific classes, via methods declared in `HelperFunctions.kt`. Like `listOf(1, 2)` provides you with `List<Int>`, while under the hood `ArrayList<Int>` (or some other implementation class) is used. You should replace TODOs in `HelperFunctions.kt` with code that returns your implementations.
+- **Separate `Node` Class**: The structure includes a separate `Node` class, which facilitates tree operations management and improves code modularity.
 
-### Architecture and Inheritance
+- **Iterator Support**: Iterators are automatically invalidated when the underlying tree is modified, adhering to the expected behavior of mutable collections in Kotlin. This ensures that operations such as removing elements during iteration are handled correctly.
 
-We expect you to write a self-balancing BST as a base class or interface that is a subtype of the first interface declared in the `Task.kt` file. Apart from methods in the interface, it should have the core functionality of a BST, meaning it should be possible to add and remove nodes with $O(\log(n))$ average or amortized time complexity. Notice that second type parameter `V`, which is the type of values, is not `Comparable`, hence `maximum/minimumValue` returns not the actual maximum or minimum, but the value which is assigned to `maximum/minimumKey` respectively.
+## Extended Functionality
 
-Most likely, you will need a separate `Node` class. 
+The implementation of the balanced tree serves as the foundation for fulfilling the functionalities required by the `Map`, `MutableMap`, and `List` interfaces. Most of the code for `Map` and `MutableMap` is shared to maximize efficiency and reduce redundancy.
 
-When you have a working BST, you can use it to implement other interfaces. `MutableMap` and `Map` share most of their code, so it is easier to only implement the mutable version, which will obviously implement the read-only version, too.
+Additionally, when implementing the `entries`, `keys`, and `values` properties in `MutableMap`, I ensured that these reflect changes directly in the tree structure, without storing a separate copy of the data.
 
-You can make `List` and `Map` completely separate, or one can be inherited from the other, do what you find more comfortable.
+## Iterators and Concurrent Modifications
 
-__Note:__ `detekt` limits number of methods in a class. Please implement each interface separately whenever possible, instead of creating a single almighty class.
+I implemented mechanisms to ensure that iterators are invalidated if the tree structure changes during their use, preventing exceptions such as `ConcurrentModificationException`. This functionality is aligned with the expected behavior in Kotlin's mutable collections.
 
-### Access modifiers
+## Project Goal
 
-Throughout your solution, pay close attention to visibility and inheritance modifiers. Imagine that you are writing a library that you are going to share with the public, do not forget about `sealed`, `internal` and extension functions.
+The main goal of this project was to deepen my understanding of the fundamental principles of object-oriented programming in Kotlin, as well as to explore the efficient implementation of self-balancing data structures. I wrote tests to verify the correct behavior of the tree in various scenarios and ensured that the code followed best practices for visibility and modularity, using modifiers like `sealed` and `internal` where necessary.
 
-### Iterators
+## Requirements and Testing
 
-Iterators get invalidated if the underlying collection was modified after their creation not using them. Example:
-```kotlin
-val list = mutableListOf(1, 2, 3)
-for (item in list) {
-    println(item)
-    list.removeLast()
-}
-```
-This code will print 1 and then throw `ConcurrentModificationException`, because `for` loop creates an iterator, which is invalidated after an element is removed from the list. At the same time, the code below works, and the list will be left empty as a result:
-```kotlin
-val list = mutableListOf(1, 2, 3)
-val it = list.iterator()
-for (item in it) {
-    it.remove()
-}
-println(list) // []
-```
-To learn how to achieve this, you can look through the methods of [`AbstractList`](https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/util/AbstractList.java) and pay attention to `modCount` property.
+The project was designed to follow Kotlin's best practices, including the use of tools like `detekt` and `diktat` to ensure code quality. These analyses can be run with the following commands:
 
-### Entries, Keys and Values
+- To run `detekt`: `gradlew customDetekt`
+- To run `diktat`: `gradlew diktatCheck`
 
-The `entries`, `keys`, and `values` properties declared in `MutableMap` and `Map` are backed by the underlying map. It means that they should not store a copy of the tree's data, but provide another way of access to the original collection.
+The generated reports can be found in the `build/reports` directory.
 
-To implement them correctly for `MutableMap`, the subsequent contracts must be adhered to:
-
-1. The structural changes of tree have to be reflected in entry, key, or value collections.
-1. When something is removed from such sets, it has to be reflected in the underlying collection. If an element is removed using `entries`, `keys`, `values` properties, then the according node has to be removed from the tree.
-1. Despite that the collections are mutable, addition support is not required: you can just throw [`UnsupportedOperationException`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unsupported-operation-exception) in its implementation.
-
-Example:
-```kotlin
-val simpleMap = mutableMapOf(1 to "a", 2 to "b")
-val entries = simpleMap.entries
-println(entries) // [1=a, 2=b], same as map
-simpleMap[3] = "c"
-println(entries) // [1=a, 2=b, 3=c], element is present in the entries set
-entries.removeIf { it.value == "b" }
-println(simpleMap) // {1=a, 3=c}, 2=b was removed from the map
-entries.add(SOMETHING) // throws UnsupportedOperationException
-```
-
-### Null safety
-
-Try to avoid the not-null assertion operator (`!!`). There are various ways to do that:
-```kotlin
-fun trueIfAllNotNull(value1: Type?, value2: Type?, value3: Type?): Boolean {
-    if (value1 == null) {
-        return false
-    }
-    // now value1 is smart-casted to not-null Type
-    val notNullValue2 = value2 ?: return false
-    value3?.let { // it here is not-null Type
-        return true
-    }
-    return false
-}
-```
-
-## Partial Solutions
-
-You may have completed the `List` task, and have not implemented maps yet.
-Or you may have completed `Map`, but not `MutableMap`.
-In such cases, you need to disable corresponding tests in order for the build to pass CI.
-To do that, go to `projectDir/.github/workflows/HW3.yml`. 
-There is a list of jobs: `build`, `diktat` and so on. 
-You can comment out/delete `map`, `mutable-map` or `list` (the whole block, not just the name) if you have not done that part yet.
-
-## Detekt and Diktat
-To run detekt: `gradlew customDetekt`  
-To run diktat: `gradlew diktatCheck`  
-Or find corresponding Gradle tasks in IDEA's Gradle toolbar in 'Tasks > verification'.  
-Reports of both detekt and diktat can be found as HTML files in '$projectDir/build/reports'.  
-__Note:__ if you disagree with some diktat or detekt rule, you can suppress it and write down your reasoning in the PR. It is okay to sometimes bend the rules.
-
-**For the instructor, how to grade an assignment:**
-
-1 point for each item + 2 points for general approach and code architecture.
